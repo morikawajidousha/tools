@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FDE巡回 — 日本のフォワードデプロイドエンジニア動向ウォッチ</title>
+<style>
+  :root {
+    --ink: #1b1e24;
+    --ink-soft: #5a6070;
+    --paper: #f6f7f4;
+    --card: #ffffff;
+    --line: #e2e4de;
+    --ai: #2e4d7b;        /* 藍 — 主アクセント */
+    --ai-deep: #22395c;
+    --done: #3d7a52;      /* 巡回済み */
+    --mono: "SF Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+    --sans: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 32px 20px 80px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+
+  /* ヘッダ */
+  header { margin-bottom: 28px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--ai);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .date-line {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+
+  /* 巡回状況バー(シグネチャ要素) */
+  .patrol-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .dots { display: flex; gap: 6px; flex-wrap: wrap; }
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ai);
+    background: transparent;
+    transition: background .25s, border-color .25s;
+  }
+  .dot.done { background: var(--done); border-color: var(--done); }
+  .patrol-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .patrol-label strong { color: var(--ink); font-family: var(--mono); }
+
+  /* 一括操作 */
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  button {
+    font-family: var(--sans);
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .btn-primary {
+    background: var(--ai);
+    color: #fff;
+    padding: 10px 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .btn-primary:hover { background: var(--ai-deep); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ai);
+    border: 1px solid var(--ai);
+    padding: 9px 16px;
+  }
+  .btn-ghost:hover { background: rgba(46,77,123,0.08); }
+  .popup-note {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-bottom: 24px;
+  }
+
+  /* カテゴリ */
+  .category { margin-bottom: 26px; }
+  .cat-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .cat-head h2 { font-size: 15px; font-weight: 700; }
+  .cat-open {
+    background: none;
+    color: var(--ai);
+    font-size: 12px;
+    padding: 2px 6px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* ソース行 */
+  .source {
+    display: grid;
+    grid-template-columns: 20px 130px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+  }
+  .check {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    display: inline-block;
+  }
+  .source.visited .check { background: var(--done); border-color: var(--done); }
+  .src-name { font-size: 13.5px; font-weight: 600; }
+  .src-query {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 8px;
+    width: 100%;
+  }
+  .src-query:focus {
+    outline: none;
+    border-color: var(--ai);
+    color: var(--ink);
+    background: #fff;
+  }
+  .btn-open {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 6px 14px;
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+  .btn-open:hover { border-color: var(--ai); color: var(--ai); }
+
+  /* メモ */
+  .memo-section { margin-top: 34px; }
+  .memo-section h2 {
+    font-size: 15px;
+    font-weight: 700;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 8px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+    resize: vertical;
+    line-height: 1.7;
+  }
+  textarea:focus { outline: none; border-color: var(--ai); }
+  .memo-hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .footer-tools {
+    margin-top: 28px;
+    display: flex;
+    gap: 14px;
+  }
+  .btn-reset {
+    background: none;
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .btn-reset:hover { color: var(--ink); }
+
+  @media (max-width: 640px) {
+    .source { grid-template-columns: 16px 1fr auto; }
+    .src-query { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">MORIKAWAJIDOSHA / DAILY PATROL</div>
+    <h1>FDE巡回</h1>
+    <div class="date-line" id="dateLine"></div>
+  </header>
+
+  <div class="patrol-status">
+    <div class="dots" id="dots"></div>
+    <div class="patrol-label">本日の巡回 <strong id="patrolCount">0/0</strong></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="openAll()">巡回開始(全ソースを開く)</button>
+    <button class="btn-ghost" onclick="resetToday()">本日分をリセット</button>
+  </div>
+  <p class="popup-note">※ 初回は「ポップアップがブロックされました」と出るので、このページのポップアップを許可してください。クエリ欄は編集可能で、自動保存されます。</p>
+
+  <div id="categories"></div>
+
+  <div class="memo-section">
+    <h2>巡回メモ</h2>
+    <textarea id="memo" placeholder="気づいたことをここに。あとでObsidianに転記(- YYYY-MM-DD 形式推奨)"></textarea>
+    <p class="memo-hint">localStorageに自動保存。ブラウザを変えると消えるので、溜まったらvaultへ。</p>
+  </div>
+
+  <div class="footer-tools">
+    <button class="btn-reset" onclick="resetQueries()">クエリを初期値に戻す</button>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = "fde_patrol_v1";
+
+// {q} がクエリに置換される
+const DEFAULT_SOURCES = [
+  // ニュース・言説
+  { id: "gnews",  cat: "ニュース・言説", name: "Google News",
+    url: "https://news.google.com/search?q={q}&hl=ja&gl=JP&ceid=JP:ja",
+    q: "フォワードデプロイドエンジニア OR \"Forward Deployed Engineer\"" },
+  { id: "x_ja",   cat: "ニュース・言説", name: "X(日本語・最新)",
+    url: "https://x.com/search?q={q}&f=live",
+    q: "(FDE OR フォワードデプロイド) lang:ja" },
+  { id: "hatena", cat: "ニュース・言説", name: "はてなブックマーク",
+    url: "https://b.hatena.ne.jp/q/{q}?target=all&sort=recent",
+    q: "フォワードデプロイド" },
+  { id: "gweek",  cat: "ニュース・言説", name: "Google検索(1週間以内)",
+    url: "https://www.google.com/search?q={q}&tbs=qdr:w",
+    q: "\"フォワードデプロイドエンジニア\"" },
+
+  // 技術記事
+  { id: "note",   cat: "技術記事・ブログ", name: "note",
+    url: "https://note.com/search?q={q}&context=note&mode=search",
+    q: "フォワードデプロイドエンジニア" },
+  { id: "zenn",   cat: "技術記事・ブログ", name: "Zenn",
+    url: "https://zenn.dev/search?q={q}",
+    q: "Forward Deployed" },
+  { id: "qiita",  cat: "技術記事・ブログ", name: "Qiita",
+    url: "https://qiita.com/search?q={q}&sort=created",
+    q: "Forward Deployed Engineer" },
+
+  // 求人(市場シグナル)
+  { id: "indeed", cat: "求人(市場シグナル)", name: "Indeed",
+    url: "https://jp.indeed.com/jobs?q={q}&sort=date",
+    q: "フォワードデプロイドエンジニア" },
+  { id: "wantedly", cat: "求人(市場シグナル)", name: "Wantedly",
+    url: "https://www.wantedly.com/projects?type=mixed&occupation_types%5B%5D=jp__engineering&page=1&keywords%5B%5D={q}",
+    q: "Forward Deployed" },
+  { id: "herp",   cat: "求人(市場シグナル)", name: "HERP(site検索)",
+    url: "https://www.google.com/search?q=site:herp.careers+{q}&tbs=qdr:m",
+    q: "フォワードデプロイド OR \"Forward Deployed\"" },
+  { id: "linkedin", cat: "求人(市場シグナル)", name: "LinkedIn Jobs",
+    url: "https://www.linkedin.com/jobs/search/?keywords={q}&location=Japan&f_TPR=r604800",
+    q: "Forward Deployed Engineer" },
+
+  // 英語圏(文脈把握)
+  { id: "hn",     cat: "英語圏(文脈)", name: "Hacker News",
+    url: "https://hn.algolia.com/?q={q}&sort=byDate",
+    q: "forward deployed engineer" },
+  { id: "gnews_en", cat: "英語圏(文脈)", name: "Google News(EN)",
+    url: "https://news.google.com/search?q={q}&hl=en-US&gl=US&ceid=US:en",
+    q: "\"forward deployed engineer\"" }
+];
+
+let state = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // 新規ソースが追加された場合のマージ
+      const known = new Set(s.sources.map(x => x.id));
+      DEFAULT_SOURCES.forEach(d => { if (!known.has(d.id)) s.sources.push({...d}); });
+      return s;
+    }
+  } catch(e) {}
+  return { sources: DEFAULT_SOURCES.map(s => ({...s})), visited: {}, memo: "" };
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+function isVisitedToday(id) {
+  return state.visited[id] === todayStr();
+}
+
+function buildUrl(src) {
+  return src.url.replace("{q}", encodeURIComponent(src.q));
+}
+
+function openSource(id) {
+  const src = state.sources.find(s => s.id === id);
+  if (!src) return;
+  window.open(buildUrl(src), "_blank");
+  state.visited[id] = todayStr();
+  save();
+  render();
+}
+
+function openCategory(cat) {
+  const targets = state.sources.filter(s => s.cat === cat);
+  targets.forEach((src, i) => {
+    setTimeout(() => {
+      window.open(buildUrl(src), "_blank");
+      state.visited[src.id] = todayStr();
+      save();
+      render();
+    }, i * 250);
+  });
+}
+
+function openAll() {
+  state.sources.forEach((src, i) => {
+    setTimeout(() => {
+      window.open(buildUrl(src), "_blank");
+      state.visited[src.id] = todayStr();
+      save();
+      render();
+    }, i * 250);
+  });
+}
+
+function resetToday() {
+  const t = todayStr();
+  Object.keys(state.visited).forEach(k => {
+    if (state.visited[k] === t) delete state.visited[k];
+  });
+  save();
+  render();
+}
+
+function resetQueries() {
+  if (!confirm("すべてのクエリを初期値に戻します。よろしいですか?")) return;
+  state.sources = DEFAULT_SOURCES.map(s => ({...s}));
+  save();
+  render();
+}
+
+function onQueryEdit(id, value) {
+  const src = state.sources.find(s => s.id === id);
+  if (src) { src.q = value; save(); }
+}
+
+function render() {
+  // 日付
+  const d = new Date();
+  const days = ["日","月","火","水","木","金","土"];
+  document.getElementById("dateLine").textContent =
+    d.getFullYear() + "." + String(d.getMonth()+1).padStart(2,"0") + "." + String(d.getDate()).padStart(2,"0") + " (" + days[d.getDay()] + ")";
+
+  // ドット
+  const dots = document.getElementById("dots");
+  dots.innerHTML = "";
+  let done = 0;
+  state.sources.forEach(src => {
+    const el = document.createElement("span");
+    el.className = "dot" + (isVisitedToday(src.id) ? " done" : "");
+    el.title = src.name;
+    dots.appendChild(el);
+    if (isVisitedToday(src.id)) done++;
+  });
+  document.getElementById("patrolCount").textContent = done + "/" + state.sources.length;
+
+  // カテゴリ別リスト
+  const cats = [...new Set(state.sources.map(s => s.cat))];
+  const container = document.getElementById("categories");
+  container.innerHTML = "";
+  cats.forEach(cat => {
+    const sec = document.createElement("div");
+    sec.className = "category";
+    const head = document.createElement("div");
+    head.className = "cat-head";
+    head.innerHTML = "<h2>" + cat + "</h2>";
+    const openBtn = document.createElement("button");
+    openBtn.className = "cat-open";
+    openBtn.textContent = "このカテゴリを一括で開く";
+    openBtn.onclick = () => openCategory(cat);
+    head.appendChild(openBtn);
+    sec.appendChild(head);
+
+    state.sources.filter(s => s.cat === cat).forEach(src => {
+      const row = document.createElement("div");
+      row.className = "source" + (isVisitedToday(src.id) ? " visited" : "");
+
+      const check = document.createElement("span");
+      check.className = "check";
+
+      const name = document.createElement("span");
+      name.className = "src-name";
+      name.textContent = src.name;
+
+      const input = document.createElement("input");
+      input.className = "src-query";
+      input.value = src.q;
+      input.spellcheck = false;
+      input.oninput = e => onQueryEdit(src.id, e.target.value);
+
+      const btn = document.createElement("button");
+      btn.className = "btn-open";
+      btn.textContent = "開く";
+      btn.onclick = () => openSource(src.id);
+
+      row.appendChild(check);
+      row.appendChild(name);
+      row.appendChild(input);
+      row.appendChild(btn);
+      sec.appendChild(row);
+    });
+    container.appendChild(sec);
+  });
+
+  // メモ
+  const memo = document.getElementById("memo");
+  if (memo.value !== state.memo) memo.value = state.memo;
+}
+
+document.getElementById("memo").addEventListener("input", e => {
+  state.memo = e.target.value;
+  save();
+});
+
+render();
+</script>
+</body>
+</html>
