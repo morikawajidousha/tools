@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Kindle検索ランチャー</title>
+<style>
+  :root {
+    --bg: #f4efe6;
+    --bg2: #efe8da;
+    --card: #fffdf8;
+    --card-hover: #faf6ec;
+    --accent: #c8741a;
+    --accent-dim: #a85e10;
+    --accent-soft: #f3e4d0;
+    --text: #2e2820;
+    --text-dim: #8a8175;
+    --border: #e3d9c6;
+    --danger: #c0453f;
+    --shadow: 0 1px 2px rgba(60,48,30,0.06), 0 4px 14px rgba(60,48,30,0.05);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Mincho ProN", "Hiragino Sans", "Segoe UI", serif;
+    background: var(--bg);
+    background-image: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+  header {
+    padding: 30px 20px 18px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,253,248,0.5);
+  }
+  header h1 {
+    font-size: 1.32rem;
+    margin: 0 0 6px;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 22px 16px 0;
+  }
+  .search-box {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  input[type="text"] {
+    flex: 1;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    box-shadow: var(--shadow);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  input[type="text"]::placeholder { color: #b7ad9c; }
+  button.go {
+    background: var(--accent);
+    color: #fffdf8;
+    border: none;
+    border-radius: 14px;
+    padding: 0 22px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: var(--shadow);
+  }
+  button.go:active { background: var(--accent-dim); }
+
+  .quick-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .quick-filters button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .quick-filters button.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  section h2 {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-weight: 700;
+    margin: 0 0 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.03em;
+  }
+  section h2 button.clear {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 4px;
+  }
+  ul.history {
+    list-style: none;
+    margin: 0 0 28px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  ul.history li {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  ul.history li .item-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    text-align: left;
+    padding: 13px 15px;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+  ul.history li .item-btn:active { background: var(--card-hover); }
+  ul.history li .meta {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    display: block;
+    margin-top: 3px;
+  }
+  ul.history li .del-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 13px 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .empty {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 26px 0;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    background: rgba(255,253,248,0.4);
+  }
+  .note {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+    margin-top: 10px;
+  }
+  .note b { color: var(--text); }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 4px;
+    margin: 20px 0 18px;
+  }
+  .tabs button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 11px;
+    cursor: pointer;
+  }
+  .tabs button.active {
+    background: var(--accent);
+    color: #fffdf8;
+    box-shadow: var(--shadow);
+  }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
+
+  .fav-add {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .fav-add input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    font-size: 0.9rem;
+    outline: none;
+    box-shadow: var(--shadow);
+  }
+  .fav-add input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .fav-add button {
+    background: var(--accent);
+    color: #fffdf8;
+    border: none;
+    border-radius: 14px;
+    padding: 0 18px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: var(--shadow);
+  }
+  .fav-hint {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin: -6px 0 16px;
+    line-height: 1.6;
+  }
+  ul.favlist {
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  ul.favlist li {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow);
+  }
+  ul.favlist li .fav-main {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+  }
+  ul.favlist li .fav-title {
+    font-size: 0.92rem;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  ul.favlist li .fav-meta {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+  ul.favlist li .fav-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  ul.favlist li .fav-actions button {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Kindle<span>検索</span>ランチャー</h1>
+  <p>検索すると <b>ブラウザ版Amazon</b> のKindleストアを開きます。<br>価格・購入ボタンが表示されない問題を回避できます。</p>
+</header>
+
+<main>
+  <div class="search-box">
+    <input type="text" id="queryInput" placeholder="本のタイトルや作家名を入力" autocomplete="off">
+    <button class="go" id="goBtn">検索</button>
+  </div>
+
+  <div class="quick-filters" id="filters">
+    <button data-filter="">すべて</button>
+    <button data-filter="kindle">Kindle本のみ</button>
+    <button data-filter="unlimited">Unlimited対象</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="active" data-tab="history">検索履歴</button>
+    <button data-tab="favorites">お気に入り</button>
+  </div>
+
+  <section class="tabpanel active" id="panel-history">
+    <h2>検索履歴 <button class="clear" id="clearBtn">全て削除</button></h2>
+    <ul class="history" id="historyList"></ul>
+  </section>
+
+  <section class="tabpanel" id="panel-favorites">
+    <div class="fav-add">
+      <input type="text" id="favUrlInput" placeholder="ここに長押しでペースト" autocomplete="off" autocapitalize="off">
+      <button id="favAddBtn">追加</button>
+    </div>
+    <p class="fav-hint">
+      AmazonのKindle商品ページで共有ボタン→「リンクをコピー」→上の欄を<b>長押し→ペースト</b>→「追加」。
+      タイトルはURLから自動推測されます（後で編集できます）。
+    </p>
+    <h2>保存済み <button class="clear" id="favClearBtn">全て削除</button></h2>
+    <ul class="favlist" id="favList"></ul>
+  </section>
+
+  <p class="note">
+    <b>使い方:</b> 検索すると新しいタブでAmazon.co.jpのKindleストア検索結果が開きます。
+    iPhoneのKindleアプリ内では価格非表示になりますが、このページから開いた
+    ブラウザ版なら価格・「注文を確定する」ボタンが表示されます。<br><br>
+    履歴・お気に入りはこの端末のブラウザ内だけに保存され、外部には送信されません。
+  </p>
+</main>
+
+<script>
+(function () {
+  const STORAGE_KEY = "kindleSearchHistory";
+  const MAX_HISTORY = 30;
+
+  // localStorageが使えない環境でも落ちないようにメモリ退避を用意
+  const memStore = {};
+  const store = {
+    get(key) {
+      try { return localStorage.getItem(key); }
+      catch (e) { return key in memStore ? memStore[key] : null; }
+    },
+    set(key, val) {
+      try { localStorage.setItem(key, val); }
+      catch (e) { memStore[key] = val; }
+    }
+  };
+
+  const input = document.getElementById("queryInput");
+  const goBtn = document.getElementById("goBtn");
+  const historyList = document.getElementById("historyList");
+  const clearBtn = document.getElementById("clearBtn");
+  const filterBtns = document.querySelectorAll("#filters button");
+
+  let activeFilter = "";
+
+  function loadHistory() {
+    try {
+      const raw = store.get(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveHistory(items) {
+    store.set(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function formatDate(ts) {
+    const d = new Date(ts);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  }
+
+  function buildAmazonUrl(query, filter) {
+    const params = new URLSearchParams();
+    params.set("k", query);
+    params.set("i", "digital-text");
+    if (filter === "unlimited") {
+      params.set("rh", "n:2250739051,p_n_feature_browse-bin:13234599051");
+    }
+    return "https://www.amazon.co.jp/s?" + params.toString();
+  }
+
+  function renderHistory() {
+    const items = loadHistory();
+    historyList.innerHTML = "";
+
+    if (items.length === 0) {
+      const empty = document.createElement("li");
+      empty.style.border = "none";
+      empty.style.background = "none";
+      empty.style.boxShadow = "none";
+      empty.innerHTML = '<div class="empty" style="width:100%;">まだ検索履歴がありません</div>';
+      historyList.appendChild(empty);
+      return;
+    }
+
+    items.forEach((item, idx) => {
+      const li = document.createElement("li");
+
+      const btn = document.createElement("button");
+      btn.className = "item-btn";
+      btn.innerHTML = `${escapeHtml(item.query)}<span class="meta">${formatDate(item.ts)}${item.filter ? " ・ " + filterLabel(item.filter) : ""}</span>`;
+      btn.addEventListener("click", () => {
+        input.value = item.query;
+        openSearch(item.query, item.filter || "");
+      });
+
+      const del = document.createElement("button");
+      del.className = "del-btn";
+      del.textContent = "✕";
+      del.addEventListener("click", () => {
+        const all = loadHistory();
+        all.splice(idx, 1);
+        saveHistory(all);
+        renderHistory();
+      });
+
+      li.appendChild(btn);
+      li.appendChild(del);
+      historyList.appendChild(li);
+    });
+  }
+
+  function filterLabel(f) {
+    if (f === "kindle") return "Kindle本のみ";
+    if (f === "unlimited") return "Unlimited対象";
+    return "";
+  }
+
+  function addToHistory(query, filter) {
+    let items = loadHistory();
+    items = items.filter((i) => !(i.query === query && i.filter === filter));
+    items.unshift({ query, filter, ts: Date.now() });
+    if (items.length > MAX_HISTORY) items = items.slice(0, MAX_HISTORY);
+    saveHistory(items);
+    renderHistory();
+  }
+
+  function openSearch(query, filter) {
+    const q = query.trim();
+    if (!q) {
+      input.focus();
+      return;
+    }
+    addToHistory(q, filter);
+    const url = buildAmazonUrl(q, filter);
+    openUrl(url);
+  }
+
+  // 新規タブがブロックされる環境（アプリ内ブラウザ等）では同一画面で開く
+  function openUrl(url) {
+    let w = null;
+    try { w = window.open(url, "_blank", "noopener"); } catch (e) {}
+    if (!w) location.href = url;
+  }
+
+  goBtn.addEventListener("click", () => openSearch(input.value, activeFilter));
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") openSearch(input.value, activeFilter);
+  });
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      filterBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeFilter = btn.dataset.filter;
+    });
+  });
+  filterBtns[0].classList.add("active");
+
+  clearBtn.addEventListener("click", () => {
+    if (confirm("検索履歴をすべて削除しますか？")) {
+      saveHistory([]);
+      renderHistory();
+    }
+  });
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- タブ切り替え ----------
+  const tabBtns = document.querySelectorAll("#tabs button");
+  const panels = {
+    history: document.getElementById("panel-history"),
+    favorites: document.getElementById("panel-favorites"),
+  };
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      tabBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      Object.values(panels).forEach((p) => p.classList.remove("active"));
+      panels[btn.dataset.tab].classList.add("active");
+    });
+  });
+
+  // ---------- お気に入り ----------
+  const FAV_KEY = "kindleFavorites";
+  const favUrlInput = document.getElementById("favUrlInput");
+  const favAddBtn = document.getElementById("favAddBtn");
+  const favList = document.getElementById("favList");
+  const favClearBtn = document.getElementById("favClearBtn");
+
+  function loadFavorites() {
+    try {
+      const raw = store.get(FAV_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveFavorites(items) {
+    store.set(FAV_KEY, JSON.stringify(items));
+  }
+
+  function guessTitleFromUrl(rawUrl) {
+    try {
+      const u = new URL(rawUrl);
+      const parts = u.pathname.split("/").filter(Boolean);
+      const dpIndex = parts.indexOf("dp");
+      let slug = "";
+      if (dpIndex > 0) {
+        slug = parts[dpIndex - 1];
+      } else if (parts.length > 0) {
+        slug = parts[0];
+      }
+      slug = decodeURIComponent(slug || "").replace(/[-_]+/g, " ").trim();
+      return slug || "Amazon商品";
+    } catch (e) {
+      return "Amazon商品";
+    }
+  }
+
+  function normalizeUrl(text) {
+    const match = text.match(/https?:\/\/[^\s]+/);
+    return match ? match[0] : "";
+  }
+
+  function renderFavorites() {
+    const items = loadFavorites();
+    favList.innerHTML = "";
+
+    if (items.length === 0) {
+      const empty = document.createElement("li");
+      empty.style.border = "none";
+      empty.style.background = "none";
+      empty.style.boxShadow = "none";
+      empty.innerHTML = '<div class="empty" style="width:100%;">まだお気に入りがありません</div>';
+      favList.appendChild(empty);
+      return;
+    }
+
+    items.forEach((item, idx) => {
+      const li = document.createElement("li");
+
+      const main = document.createElement("div");
+      main.className = "fav-main";
+      main.innerHTML = `<div class="fav-title">${escapeHtml(item.title)}</div><div class="fav-meta">${formatDate(item.ts)}</div>`;
+      main.addEventListener("click", () => {
+        openUrl(item.url);
+      });
+
+      const actions = document.createElement("div");
+      actions.className = "fav-actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✎";
+      editBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const newTitle = prompt("タイトルを編集", item.title);
+        if (newTitle !== null && newTitle.trim() !== "") {
+          const all = loadFavorites();
+          all[idx].title = newTitle.trim();
+          saveFavorites(all);
+          renderFavorites();
+        }
+      });
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const all = loadFavorites();
+        all.splice(idx, 1);
+        saveFavorites(all);
+        renderFavorites();
+      });
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      li.appendChild(main);
+      li.appendChild(actions);
+      favList.appendChild(li);
+    });
+  }
+
+  function addFavoriteFromInput() {
+    const raw = favUrlInput.value.trim();
+    const url = normalizeUrl(raw);
+    if (!url) {
+      alert("AmazonのURLが見つかりませんでした。リンクをコピーしてから貼り付けてください。");
+      return;
+    }
+    const title = guessTitleFromUrl(url);
+    const items = loadFavorites();
+    items.unshift({ title, url, ts: Date.now() });
+    saveFavorites(items);
+    favUrlInput.value = "";
+    renderFavorites();
+  }
+
+  favAddBtn.addEventListener("click", addFavoriteFromInput);
+  favUrlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addFavoriteFromInput();
+  });
+
+  favClearBtn.addEventListener("click", () => {
+    if (confirm("お気に入りをすべて削除しますか？")) {
+      saveFavorites([]);
+      renderFavorites();
+    }
+  });
+
+  renderHistory();
+  renderFavorites();
+})();
+</script>
+
+</body>
+</html>
