@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>森川自動社 tools</title>
+<style>
+  :root {
+    --ink: #1b1e24;
+    --ink-soft: #5a6070;
+    --paper: #f6f7f4;
+    --card: #ffffff;
+    --line: #e2e4de;
+    --ai: #2e4d7b;
+    --mono: "SF Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+    --sans: "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 40px 20px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--ai);
+    margin-bottom: 6px;
+  }
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 28px; }
+  a.tool {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color .15s;
+  }
+  a.tool:hover { border-color: var(--ai); }
+  .tool-name { font-size: 15px; font-weight: 700; }
+  .tool-desc { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">MORIKAWAJIDOSHA</div>
+  <h1>tools</h1>
+
+  <a class="tool" href="fde_patrol.html">
+    <div class="tool-name">FDE巡回</div>
+    <div class="tool-desc">日本のフォワードデプロイドエンジニア動向を毎日ウォッチ</div>
+  </a>
+
+</div>
+</body>
+</html>
