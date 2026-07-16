@@ -177,6 +177,18 @@ dialog textarea{resize:vertical;min-height:64px;}
   text-decoration:underline;text-underline-offset:3px;cursor:pointer;
 }
 .iotools input{display:none;}
+.bml{margin:8px 16px 0;border:1px solid var(--rule);border-radius:var(--radius);background:#fff;}
+.bml summary{font-size:12px;color:var(--ink-weak);padding:8px 12px;cursor:pointer;}
+.bml .inner{padding:0 12px 12px;font-size:12px;color:#4a463f;}
+.bml ol{padding-left:18px;margin:6px 0;}
+.bml textarea{
+  width:100%;height:72px;font-size:10px;font-family:Menlo,monospace;
+  border:1px solid var(--rule);border-radius:var(--radius);padding:6px;resize:none;color:var(--ink-weak);
+}
+.bml button{
+  border:1px solid var(--ink);border-radius:var(--radius);background:#fff;
+  font-size:12px;padding:5px 14px;cursor:pointer;margin-top:6px;
+}
 
 @media (prefers-reduced-motion:no-preference){
   .item{animation:fade .18s ease-out;}
@@ -205,6 +217,20 @@ dialog textarea{resize:vertical;min-height:64px;}
 <div class="filters" id="tagFilters" role="group" aria-label="タグフィルタ"></div>
 
 <main id="list"></main>
+
+<details class="bml">
+  <summary>ブックマークレット — 商品ページから自動記帳</summary>
+  <div class="inner">
+    <ol>
+      <li>下のコードをコピー</li>
+      <li>Safariでこのページを共有→「ブックマークを追加」(名前:品帳に記帳)</li>
+      <li>ブックマーク編集画面でURL欄を消し、コードを貼り付けて保存</li>
+      <li>以後、商品ページでそのブックマークを開くと、商品名・価格・概要が入った状態で品帳が開く</li>
+    </ol>
+    <textarea id="bmlCode" readonly></textarea>
+    <button id="bmlCopy" type="button">コードをコピー</button>
+  </div>
+</details>
 
 <div class="iotools">
   <button id="exportBtn" type="button">書き出し (JSON)</button>
@@ -460,6 +486,47 @@ document.getElementById("importFile").onchange=e=>{
 
 load();
 render();
+
+/* ---- bookmarklet 受け取り (?add=1&url=...&title=...&price=...&memo=...) ---- */
+(function(){
+  const sp=new URLSearchParams(location.search);
+  if(!sp.get("add"))return;
+  let u=(sp.get("url")||"").trim();
+  // Amazonはトラッキング除去して正規化
+  const m=u.match(/^https?:\/\/(?:www\.)?amazon\.co\.jp\/.*?(?:dp|gp\/product)\/([A-Z0-9]{10})/);
+  if(m)u="https://www.amazon.co.jp/dp/"+m[1];
+  history.replaceState(null,"",location.pathname);
+  openDlg(null);
+  document.getElementById("fUrl").value=u;
+  document.getElementById("fTitle").value=(sp.get("title")||"").trim();
+  document.getElementById("fPrice").value=(sp.get("price")||"").replace(/[^\d]/g,"");
+  document.getElementById("fMemo").value=(sp.get("memo")||"").trim();
+})();
+
+/* ---- bookmarklet 配布 ---- */
+(function(){
+  const app=(location.protocol==="file:")
+    ?"https://morikawajidousha.github.io/tools/shina-cho.html"
+    :location.origin+location.pathname;
+  const code="javascript:(function(){var d=document;function q(s){var e=d.querySelector(s);return e?String(e.content||e.textContent||'').trim():''}"
+    +"var t=q('meta[property=\"og:title\"]')||d.title;"
+    +"var p=q('#corePrice_feature_div .a-offscreen')||q('.a-price .a-offscreen')||q('meta[property=\"product:price:amount\"]')||q('[itemprop=\"price\"]');"
+    +"p=(String(p).match(/[\\d,]{2,}/)||[''])[0];"
+    +"var m=q('meta[property=\"og:description\"]')||q('meta[name=\"description\"]');"
+    +"if(m.length>200)m=m.slice(0,200)+'\u2026';"
+    +"location.href='"+app+"?add=1&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(t)+'&price='+encodeURIComponent(p)+'&memo='+encodeURIComponent(m)})();";
+  const ta=document.getElementById("bmlCode");
+  ta.value=code;
+  document.getElementById("bmlCopy").onclick=async()=>{
+    try{
+      await navigator.clipboard.writeText(code);
+      document.getElementById("bmlCopy").textContent="コピーしました";
+    }catch(e){
+      ta.select();document.execCommand("copy");
+      document.getElementById("bmlCopy").textContent="コピーしました";
+    }
+  };
+})();
 </script>
 </body>
 </html>
