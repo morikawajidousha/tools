@@ -60,6 +60,14 @@ header .count{
 }
 .chip.on{border-color:var(--ink);color:var(--ink);font-weight:600;}
 .chip:focus-visible{outline:2px solid var(--ao);}
+.extsearch{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px 0;align-items:center;}
+.extsearch .lbl{font-size:11px;color:var(--ink-weak);letter-spacing:.1em;}
+.ext{
+  border:1px solid var(--ink);border-radius:var(--radius);background:#fff;
+  font-size:12px;padding:4px 12px;color:var(--ink);cursor:pointer;
+}
+.ext:active{background:var(--ink);color:var(--paper);}
+.ext:focus-visible{outline:2px solid var(--ao);}
 
 /* ---- list ---- */
 main{padding:4px 0 0;}
@@ -185,6 +193,13 @@ dialog textarea{resize:vertical;min-height:64px;}
 
 <div class="toolbar">
   <input type="search" id="q" placeholder="検索（タイトル・メモ・タグ・店）" aria-label="検索">
+</div>
+<div class="extsearch" role="group" aria-label="外部検索">
+  <span class="lbl">探す→</span>
+  <button class="ext" data-ext="amazon" type="button">Amazon</button>
+  <button class="ext" data-ext="rakuten" type="button">楽天</button>
+  <button class="ext" data-ext="kakaku" type="button">価格.com</button>
+  <button class="ext" data-ext="google" type="button">Google</button>
 </div>
 <div class="filters" id="statusFilters" role="group" aria-label="状態フィルタ"></div>
 <div class="filters" id="tagFilters" role="group" aria-label="タグフィルタ"></div>
@@ -394,6 +409,21 @@ form.onsubmit=e=>{
 
 /* ---- search ---- */
 qEl.addEventListener("input",render);
+
+/* ---- external search ---- */
+const EXT={
+  amazon:q=>`https://www.amazon.co.jp/s?k=${q}`,
+  rakuten:q=>`https://search.rakuten.co.jp/search/mall/${q}/`,
+  kakaku:q=>`https://search.kakaku.com/${q}/`,
+  google:q=>`https://www.google.com/search?q=${q}`,
+};
+document.querySelectorAll(".ext").forEach(b=>{
+  b.onclick=()=>{
+    const q=qEl.value.trim();
+    if(!q){qEl.focus();qEl.placeholder="検索語を入れてからボタンを押してください";return;}
+    window.open(EXT[b.dataset.ext](encodeURIComponent(q)),"_blank","noopener");
+  };
+});
 
 /* ---- import / export ---- */
 document.getElementById("exportBtn").onclick=()=>{
