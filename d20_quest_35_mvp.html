@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>D20 Quest 3.5 - MVP</title>
+  <style>
+    :root{
+      --bg:#0b0f18;
+      --panel:#111827;
+      --panel2:#07111f;
+      --line:#f7f7f7;
+      --text:#ffffff;
+      --muted:#b8c1d1;
+      --accent:#ffd84d;
+      --danger:#ff6b6b;
+      --good:#65e58b;
+      --blue:#66a3ff;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:
+      radial-gradient(circle at 50% 15%,#243a5a 0,#101827 35%,#080b12 100%);
+      color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Noto Sans JP",monospace}
+    body{padding:16px;display:flex;justify-content:center}
+    .game{width:min(780px,100%);display:grid;gap:12px}
+    .title{
+      text-align:center;font-weight:900;font-size:clamp(22px,5vw,40px);
+      letter-spacing:.08em;color:var(--accent);text-shadow:0 3px 0 #000
+    }
+    .subtitle{text-align:center;color:var(--muted);font-size:12px;margin-top:-8px}
+    .window{
+      border:3px solid var(--line);border-radius:12px;background:rgba(7,14,27,.94);
+      box-shadow:0 0 0 3px #000,0 14px 34px rgba(0,0,0,.35);padding:14px
+    }
+    .topgrid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+    @media(max-width:650px){.topgrid{grid-template-columns:1fr}}
+    .row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .name{font-weight:900;font-size:20px}
+    .badge{border:1px solid #fff;border-radius:999px;padding:4px 8px;font-size:12px}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+    .stat{border:1px solid #62708a;border-radius:8px;padding:8px;background:#0a1322}
+    .stat b{display:block;color:var(--accent);font-size:12px;margin-bottom:4px}
+    .bar{height:13px;border:1px solid #fff;background:#1b2433;border-radius:999px;overflow:hidden}
+    .fill{height:100%;transition:width .25s ease}
+    .hp{background:linear-gradient(90deg,#19a34a,#7cf29d)}
+    .mp{background:linear-gradient(90deg,#2865dd,#8fb7ff)}
+    .enemyArea{
+      min-height:220px;display:flex;flex-direction:column;justify-content:center;align-items:center;
+      background:linear-gradient(#152845,#223a59 62%,#35491f 63%,#16230d 100%);
+      border-radius:10px;border:2px solid #fff;position:relative;overflow:hidden
+    }
+    .enemy{
+      font-size:88px;filter:drop-shadow(0 12px 4px rgba(0,0,0,.4));
+      transform-origin:center bottom;user-select:none;transition:.15s
+    }
+    .enemy.hit{transform:translateX(-8px) rotate(-4deg);filter:brightness(2) drop-shadow(0 12px 4px #000)}
+    .enemy.dead{transform:scale(.1);opacity:0}
+    .enemyName{font-weight:900;background:#000b;padding:5px 10px;border-radius:7px}
+    .log{height:180px;overflow:auto;white-space:pre-wrap;line-height:1.55;font-size:14px}
+    .log .roll{color:var(--accent)}
+    .log .bad{color:var(--danger)}
+    .log .good{color:var(--good)}
+    .commands{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    button,select{
+      font:inherit;color:#fff;background:#0b1424;border:2px solid #fff;border-radius:9px;
+      padding:12px;cursor:pointer;font-weight:900
+    }
+    button:hover{background:#172844}
+    button:disabled{opacity:.42;cursor:not-allowed}
+    button.primary{color:#111;background:var(--accent)}
+    .setup{display:grid;gap:12px}
+    .classgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    @media(max-width:600px){.classgrid{grid-template-columns:1fr}}
+    .classcard{
+      border:2px solid #69758c;border-radius:10px;padding:12px;background:#0a1322;cursor:pointer
+    }
+    .classcard.selected{border-color:var(--accent);box-shadow:0 0 0 2px #ffd84d44}
+    .small{font-size:12px;color:var(--muted);line-height:1.5}
+    .hidden{display:none!important}
+    .footer{text-align:center;color:#8792a6;font-size:11px;padding:4px}
+  </style>
+</head>
+<body>
+<div class="game">
+  <div class="title">D20 QUEST 3.5</div>
+  <div class="subtitle">d20 System風ルール × 国産コマンドRPG風UI / 非公式ファンMVP</div>
+
+  <section id="setup" class="window setup">
+    <div class="name">冒険者をつくる</div>
+    <label>なまえ
+      <input id="heroName" value="ゆうしゃ" maxlength="10"
+        style="width:100%;margin-top:6px;font:inherit;padding:12px;border-radius:8px;border:2px solid #fff;background:#08101d;color:#fff">
+    </label>
+    <div>
+      <div style="margin-bottom:8px">しょくぎょう</div>
+      <div class="classgrid">
+        <div class="classcard selected" data-class="fighter">
+          <b>せんし</b>
+          <div class="small">高HP・高命中。強打が使える。</div>
+        </div>
+        <div class="classcard" data-class="mage">
+          <b>まほうつかい</b>
+          <div class="small">低HPだが、火の玉が強い。</div>
+        </div>
+        <div class="classcard" data-class="priest">
+          <b>そうりょ</b>
+          <div class="small">回復呪文と安定した防御。</div>
+        </div>
+      </div>
+    </div>
+    <button id="startBtn" class="primary">ぼうけんを はじめる</button>
+    <div class="small">
+      基本処理：d20＋攻撃ボーナス vs AC。能力修正値は⌊(能力値−10)/2⌋。
+      本MVPではテンポのため、呪文回数をMPに置き換えています。
+    </div>
+  </section>
+
+  <main id="battle" class="hidden">
+    <div class="topgrid">
+      <section class="window">
+        <div class="row">
+          <div>
+            <div id="heroDisplay" class="name">ゆうしゃ</div>
+            <div id="classDisplay" class="small">せんし Lv.1</div>
+          </div>
+          <div id="acDisplay" class="badge">AC 15</div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="row"><span>HP</span><span id="hpText"></span></div>
+          <div class="bar"><div id="hpBar" class="fill hp"></div></div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="row"><span>MP</span><span id="mpText"></span></div>
+          <div class="bar"><div id="mpBar" class="fill mp"></div></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b>STR</b><span id="strText"></span></div>
+          <div class="stat"><b>DEX</b><span id="dexText"></span></div>
+          <div class="stat"><b>CON</b><span id="conText"></span></div>
+          <div class="stat"><b>INT</b><span id="intText"></span></div>
+          <div class="stat"><b>WIS</b><span id="wisText"></span></div>
+          <div class="stat"><b>BAB</b><span id="babText"></span></div>
+        </div>
+      </section>
+
+      <section class="window">
+        <div class="enemyArea">
+          <div id="enemySprite" class="enemy">🟢</div>
+          <div id="enemyName" class="enemyName">ぷるぷる魔獣</div>
+          <div style="width:75%;margin-top:10px">
+            <div class="bar"><div id="enemyHpBar" class="fill hp"></div></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="window">
+      <div id="log" class="log"></div>
+    </section>
+
+    <section class="window">
+      <div id="commands" class="commands">
+        <button data-action="attack">たたかう</button>
+        <button data-action="skill">とくぎ</button>
+        <button data-action="spell">じゅもん</button>
+        <button data-action="item">どうぐ</button>
+        <button data-action="defend">ぼうぎょ</button>
+        <button data-action="run">にげる</button>
+      </div>
+      <button id="restartBtn" class="primary hidden" style="width:100%">もういちど</button>
+    </section>
+  </main>
+
+  <div class="footer">© 2026 Original prototype. D&Dおよびドラゴンクエストの公式作品ではありません。</div>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const d = sides => Math.floor(Math.random()*sides)+1;
+  const mod = score => Math.floor((score-10)/2);
+  let selectedClass = "fighter";
+  let hero, enemy, locked=false, defending=false, potions=2, ended=false;
+
+  const classes = {
+    fighter:{
+      label:"せんし", hp:22, mp:4, ac:16, bab:1,
+      stats:{str:17,dex:12,con:15,int:9,wis:10},
+      skill:"渾身斬り"
+    },
+    mage:{
+      label:"まほうつかい", hp:13, mp:14, ac:12, bab:0,
+      stats:{str:8,dex:14,con:11,int:18,wis:12},
+      skill:"集中"
+    },
+    priest:{
+      label:"そうりょ", hp:17, mp:12, ac:15, bab:0,
+      stats:{str:12,dex:10,con:14,int:11,wis:18},
+      skill:"聖なる打撃"
+    }
+  };
+
+  $$(".classcard").forEach(card=>{
+    card.addEventListener("click",()=>{
+      $$(".classcard").forEach(x=>x.classList.remove("selected"));
+      card.classList.add("selected");
+      selectedClass=card.dataset.class;
+    });
+  });
+
+  function log(text, cls=""){
+    const line=document.createElement("div");
+    line.className=cls;
+    line.textContent=text;
+    $("#log").appendChild(line);
+    $("#log").scrollTop=$("#log").scrollHeight;
+  }
+
+  function setupHero(){
+    const c=classes[selectedClass];
+    hero={
+      name:$("#heroName").value.trim()||"ゆうしゃ",
+      cls:selectedClass, classLabel:c.label,
+      maxHp:c.hp, hp:c.hp, maxMp:c.mp, mp:c.mp, ac:c.ac, bab:c.bab,
+      stats:{...c.stats}
+    };
+    enemy={name:"ぷるぷる魔獣",maxHp:26,hp:26,ac:13,attack:3,damageDie:6};
+    potions=2; ended=false; locked=false; defending=false;
+  }
+
+  function update(){
+    $("#heroDisplay").textContent=hero.name;
+    $("#classDisplay").textContent=hero.classLabel+" Lv.1";
+    $("#acDisplay").textContent="AC "+hero.ac;
+    $("#hpText").textContent=`${hero.hp} / ${hero.maxHp}`;
+    $("#mpText").textContent=`${hero.mp} / ${hero.maxMp}`;
+    $("#hpBar").style.width=(hero.hp/hero.maxHp*100)+"%";
+    $("#mpBar").style.width=(hero.maxMp?hero.mp/hero.maxMp*100:0)+"%";
+    $("#enemyHpBar").style.width=(Math.max(0,enemy.hp)/enemy.maxHp*100)+"%";
+    $("#strText").textContent=hero.stats.str+" ("+(mod(hero.stats.str)>=0?"+":"")+mod(hero.stats.str)+")";
+    $("#dexText").textContent=hero.stats.dex+" ("+(mod(hero.stats.dex)>=0?"+":"")+mod(hero.stats.dex)+")";
+    $("#conText").textContent=hero.stats.con+" ("+(mod(hero.stats.con)>=0?"+":"")+mod(hero.stats.con)+")";
+    $("#intText").textContent=hero.stats.int+" ("+(mod(hero.stats.int)>=0?"+":"")+mod(hero.stats.int)+")";
+    $("#wisText").textContent=hero.stats.wis+" ("+(mod(hero.stats.wis)>=0?"+":"")+mod(hero.stats.wis)+")";
+    $("#babText").textContent="+"+hero.bab;
+  }
+
+  function attackRoll(bonus, ac){
+    const roll=d(20);
+    return {roll,total:roll+bonus,hit:roll===20 || (roll!==1 && roll+bonus>=ac),crit:roll===20};
+  }
+
+  function flashEnemy(){
+    const s=$("#enemySprite");
+    s.classList.add("hit");
+    setTimeout(()=>s.classList.remove("hit"),180);
+  }
+
+  function dealEnemyDamage(amount){
+    enemy.hp=Math.max(0,enemy.hp-amount);
+    flashEnemy(); update();
+    if(enemy.hp<=0){
+      ended=true;
+      $("#enemySprite").classList.add("dead");
+      log(`\n${enemy.name}を たおした！`,"good");
+      log(`${hero.name}は 300EXP と 24ゴールドを てにいれた！`,"good");
+      endButtons();
+      return true;
+    }
+    return false;
+  }
+
+  function enemyTurn(){
+    if(ended)return;
+    setTimeout(()=>{
+      let bonus=enemy.attack;
+      const r=attackRoll(bonus, hero.ac);
+      log(`敵の攻撃：d20(${r.roll}) + ${bonus} = ${r.total} vs AC ${hero.ac}`,"roll");
+      if(r.hit){
+        let dmg=d(enemy.damageDie)+1;
+        if(defending)dmg=Math.max(1,Math.floor(dmg/2));
+        hero.hp=Math.max(0,hero.hp-dmg);
+        log(`${enemy.name}の攻撃！ ${dmg}ダメージ！`,"bad");
+      }else{
+        log(`${enemy.name}の攻撃は はずれた！`);
+      }
+      defending=false; update();
+      if(hero.hp<=0){
+        ended=true;
+        log(`\n${hero.name}は ちからつきた……`,"bad");
+        endButtons();
+      }else{
+        locked=false; setButtons(true);
+      }
+    },500);
+  }
+
+  function playerAttack(){
+    const bonus=hero.bab+mod(hero.stats.str);
+    const r=attackRoll(bonus,enemy.ac);
+    log(`${hero.name}の攻撃：d20(${r.roll}) + ${bonus} = ${r.total} vs AC ${enemy.ac}`,"roll");
+    if(r.hit){
+      let dmg=d(8)+mod(hero.stats.str);
+      if(r.crit)dmg*=2;
+      dmg=Math.max(1,dmg);
+      log(`${r.crit?"会心の一撃！ ":""}${dmg}ダメージ！`,"good");
+      if(dealEnemyDamage(dmg))return;
+    }else log("攻撃は はずれた！");
+    enemyTurn();
+  }
+
+  function useSkill(){
+    if(hero.cls==="fighter"){
+      if(hero.mp<3){log("MPが たりない！","bad");return unlock();}
+      hero.mp-=3; update();
+      const bonus=hero.bab+mod(hero.stats.str)-1;
+      const r=attackRoll(bonus,enemy.ac);
+      log(`渾身斬り：d20(${r.roll}) + ${bonus} = ${r.total} vs AC ${enemy.ac}`,"roll");
+      if(r.hit){
+        const dmg=d(10)+d(10)+mod(hero.stats.str);
+        log(`重い一撃！ ${dmg}ダメージ！`,"good");
+        if(dealEnemyDamage(dmg))return;
+      }else log("渾身斬りは はずれた！");
+      enemyTurn();
+    }else if(hero.cls==="mage"){
+      hero.mp=Math.min(hero.maxMp,hero.mp+4);
+      log(`${hero.name}は 精神を集中し、MPを4回復した。`,"good");
+      update(); enemyTurn();
+    }else{
+      if(hero.mp<3){log("MPが たりない！","bad");return unlock();}
+      hero.mp-=3; update();
+      const bonus=hero.bab+mod(hero.stats.wis);
+      const r=attackRoll(bonus,enemy.ac);
+      log(`聖なる打撃：d20(${r.roll}) + ${bonus} = ${r.total} vs AC ${enemy.ac}`,"roll");
+      if(r.hit){
+        const dmg=d(8)+d(6)+mod(hero.stats.wis);
+        log(`聖なる光が炸裂！ ${dmg}ダメージ！`,"good");
+        if(dealEnemyDamage(dmg))return;
+      }else log("聖なる打撃は はずれた！");
+      enemyTurn();
+    }
+  }
+
+  function castSpell(){
+    if(hero.cls==="mage"){
+      if(hero.mp<4){log("MPが たりない！","bad");return unlock();}
+      hero.mp-=4;
+      const dc=10+1+mod(hero.stats.int);
+      const save=d(20)+1;
+      let dmg=d(6)+d(6)+2;
+      log(`火の玉！ 敵の反応セーヴ：d20 + 1 = ${save} vs DC ${dc}`,"roll");
+      if(save>=dc){dmg=Math.floor(dmg/2);log("敵はかわして ダメージ半減！");}
+      else log("直撃した！","good");
+      update(); log(`${dmg}ダメージ！`,"good");
+      if(dealEnemyDamage(dmg))return;
+      enemyTurn();
+    }else if(hero.cls==="priest"){
+      if(hero.mp<4){log("MPが たりない！","bad");return unlock();}
+      hero.mp-=4;
+      const heal=d(8)+mod(hero.stats.wis)+2;
+      hero.hp=Math.min(hero.maxHp,hero.hp+heal);
+      log(`いやしの光！ HPが${heal}回復した。`,"good");
+      update(); enemyTurn();
+    }else{
+      if(hero.mp<2){log("MPが たりない！","bad");return unlock();}
+      hero.mp-=2;
+      const dmg=d(4)+2;
+      log(`初歩の火花！ ${dmg}ダメージ！`,"good");
+      update();
+      if(dealEnemyDamage(dmg))return;
+      enemyTurn();
+    }
+  }
+
+  function useItem(){
+    if(potions<=0){log("やくそうを もっていない！","bad");return unlock();}
+    potions--;
+    const heal=d(8)+5;
+    hero.hp=Math.min(hero.maxHp,hero.hp+heal);
+    log(`やくそうを つかった。HPが${heal}回復した。（残り${potions}）`,"good");
+    update(); enemyTurn();
+  }
+
+  function defend(){
+    defending=true;
+    log(`${hero.name}は 身を守っている。次のダメージを半減する。`);
+    enemyTurn();
+  }
+
+  function run(){
+    const check=d(20)+mod(hero.stats.dex);
+    const dc=13;
+    log(`逃走判定：d20 + DEX修正 = ${check} vs DC ${dc}`,"roll");
+    if(check>=dc){
+      ended=true; log("うまく にげきった！","good"); endButtons();
+    }else{
+      log("しかし まわりこまれてしまった！","bad"); enemyTurn();
+    }
+  }
+
+  function unlock(){locked=false;setButtons(true)}
+  function setButtons(enabled){$$("[data-action]").forEach(b=>b.disabled=!enabled)}
+  function endButtons(){setButtons(false);$("#restartBtn").classList.remove("hidden")}
+
+  $("#startBtn").addEventListener("click",()=>{
+    setupHero();
+    $("#setup").classList.add("hidden");
+    $("#battle").classList.remove("hidden");
+    $("#enemySprite").classList.remove("dead");
+    $("#log").innerHTML="";
+    log(`${enemy.name}が あらわれた！`);
+    log(`ルール：d20＋攻撃ボーナスが敵AC以上なら命中。`);
+    update();
+  });
+
+  $("#commands").addEventListener("click",e=>{
+    const action=e.target.dataset.action;
+    if(!action||locked||ended)return;
+    locked=true; setButtons(false);
+    ({attack:playerAttack,skill:useSkill,spell:castSpell,item:useItem,defend,run})[action]();
+  });
+
+  $("#restartBtn").addEventListener("click",()=>{
+    $("#battle").classList.add("hidden");
+    $("#setup").classList.remove("hidden");
+    $("#restartBtn").classList.add("hidden");
+  });
+})();
+</script>
+</body>
+</html>
